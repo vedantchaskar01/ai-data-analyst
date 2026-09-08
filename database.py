@@ -19,7 +19,13 @@ def get_db_connection():
         print(f"db conn error: {e}")
         return None
 
-def extract_schema():
+_SCHEMA_CACHE = None
+
+def extract_schema(force_refresh: bool = False):
+    global _SCHEMA_CACHE
+    if _SCHEMA_CACHE is not None and not force_refresh:
+        return _SCHEMA_CACHE
+
     conn = get_db_connection()
     if not conn:
         return None
@@ -49,6 +55,7 @@ def extract_schema():
                     schema_info[table]["sample_rows"] = [dict(row) for row in sample_data]
                 except Exception as table_err:
                     print(f"failed to get sample rows for {table}: {table_err}")
+            _SCHEMA_CACHE = schema_info
             return schema_info
     except Exception as e:
         print(f"schema extraction error: {e}")
@@ -58,22 +65,17 @@ def extract_schema():
 
 def execute_safe_query(query: str):
     from validator import sanitize_query
-    try:
-        safe_query = sanitize_query(query)
-    except Exception as e:
-        print(f"Validation failed: {e}")
-        return None
+    # Let ValueError propagate if query is blocked (e.g. non-SELECT or invalid syntax)
+    safe_query = sanitize_query(query)
+    
     conn = get_db_connection()
     if not conn:
-        return None
+        raise ConnectionError("Could not connect to database.")
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("SET statement_timeout = '5s'")
             cur.execute(safe_query)
             return [dict(row) for row in cur.fetchall()]
-    except Exception as e:
-        print(f"Execution error: {e}")
-        return None
     finally:
         conn.close()
 
