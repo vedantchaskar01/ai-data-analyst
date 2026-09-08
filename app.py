@@ -88,7 +88,10 @@ def render_chart(df: pd.DataFrame, analysis: dict):
     # Clean DataFrame: ensure numeric conversions
     numeric_df = df.copy()
     for col in numeric_df.columns:
-        numeric_df[col] = pd.to_numeric(numeric_df[col], errors='ignore')
+        try:
+            numeric_df[col] = pd.to_numeric(numeric_df[col])
+        except Exception:
+            pass
 
     # Metric KPI Card
     if chart_type == "Metric" or (len(numeric_df) == 1 and len(numeric_df.columns) == 1):
@@ -152,40 +155,49 @@ def render_chart(df: pd.DataFrame, analysis: dict):
     else:
         st.info("No visualization required for this query result.")
 
+def display_assistant_response(insight, time_taken, data_list, sql_query, analysis):
+    if insight:
+        st.markdown(insight)
+    if time_taken:
+        st.markdown(f"<div class='latency-badge'>⚡ Executed in {time_taken}s</div>", unsafe_allow_html=True)
+
+    if len(data_list) > 0:
+        df = pd.DataFrame(convert_decimals(data_list))
+        chart_type = analysis.get("chart_type", "None") if analysis else "None"
+        
+        if chart_type != "None":
+            t1, t2, t3 = st.tabs(["📊 Visualization", "📋 Data Table", "🔍 SQL Query"])
+            with t1:
+                render_chart(df, analysis or {})
+            with t2:
+                st.dataframe(df, use_container_width=True)
+            with t3:
+                st.code(sql_query, language="sql")
+        else:
+            t1, t2 = st.tabs(["📋 Data Table", "🔍 SQL Query"])
+            with t1:
+                st.dataframe(df, use_container_width=True)
+            with t2:
+                st.code(sql_query, language="sql")
+    elif sql_query:
+        st.code(sql_query, language="sql")
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # Display previous conversation
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-        if msg.get("time_taken"):
-            st.markdown(f"<div class='latency-badge'>⚡ Executed in {msg['time_taken']}s</div>", unsafe_allow_html=True)
-            
-        data_list = msg.get("data", [])
-        sql_query = msg.get("sql", "")
-        analysis = msg.get("analysis", {})
-
-        if len(data_list) > 0:
-            df = pd.DataFrame(convert_decimals(data_list))
-            chart_type = analysis.get("chart_type", "None") if analysis else "None"
-            
-            if chart_type != "None":
-                t1, t2, t3 = st.tabs(["📊 Visualization", "📋 Data Table", "🔍 SQL Query"])
-                with t1:
-                    render_chart(df, analysis or {})
-                with t2:
-                    st.dataframe(df, use_container_width=True)
-                with t3:
-                    st.code(sql_query, language="sql")
-            else:
-                t1, t2 = st.tabs(["📋 Data Table", "🔍 SQL Query"])
-                with t1:
-                    st.dataframe(df, use_container_width=True)
-                with t2:
-                    st.code(sql_query, language="sql")
-        elif sql_query:
-            st.code(sql_query, language="sql")
+        if msg["role"] == "user":
+            st.markdown(msg["content"])
+        else:
+            display_assistant_response(
+                msg.get("content", ""),
+                msg.get("time_taken"),
+                msg.get("data", []),
+                msg.get("sql", ""),
+                msg.get("analysis", {})
+            )
 
 # Chat input
 if prompt := st.chat_input("Ask a question about your data..."):
@@ -194,48 +206,25 @@ if prompt := st.chat_input("Ask a question about your data..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        with st.status("Analyzing question...", expanded=True) as status:
-            st.write("1. Parsing natural language & generating SQL...")
+        with st.spinner("Analyzing question & querying PostgreSQL..."):
             res = ask_database(prompt)
-            if not res:
-                status.update(label="Query Failed", state="error")
-                st.error("Failed to connect or retrieve data from the database.")
-            else:
-                status.update(label=f"Completed in {res.get('time_taken', 0)}s ⚡", state="complete")
-                sql_query = res.get("sql", "")
-                data_list = convert_decimals(res.get("data", []))
-                analysis = res.get("analysis") or {}
-                time_taken = res.get("time_taken", 0)
-                insight = analysis.get("insight", "Here is your data.")
-                chart_type = analysis.get("chart_type", "None")
 
-                st.markdown(insight)
-                st.markdown(f"<div class='latency-badge'>⚡ Executed in {time_taken}s</div>", unsafe_allow_html=True)
+        if not res:
+            st.error("Failed to connect or retrieve data from the database.")
+        else:
+            sql_query = res.get("sql", "")
+            data_list = convert_decimals(res.get("data", []))
+            analysis = res.get("analysis") or {}
+            time_taken = res.get("time_taken", 0)
+            insight = analysis.get("insight", "Here is your data.")
 
-                if len(data_list) > 0:
-                    df = pd.DataFrame(data_list)
-                    if chart_type != "None":
-                        t1, t2, t3 = st.tabs(["📊 Visualization", "📋 Data Table", "🔍 SQL Query"])
-                        with t1:
-                            render_chart(df, analysis)
-                        with t2:
-                            st.dataframe(df, use_container_width=True)
-                        with t3:
-                            st.code(sql_query, language="sql")
-                    else:
-                        t1, t2 = st.tabs(["📋 Data Table", "🔍 SQL Query"])
-                        with t1:
-                            st.dataframe(df, use_container_width=True)
-                        with t2:
-                            st.code(sql_query, language="sql")
-                elif sql_query:
-                    st.code(sql_query, language="sql")
+            display_assistant_response(insight, time_taken, data_list, sql_query, analysis)
 
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": insight,
-                    "sql": sql_query,
-                    "data": data_list,
-                    "analysis": analysis,
-                    "time_taken": time_taken
-                })
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": insight,
+                "sql": sql_query,
+                "data": data_list,
+                "analysis": analysis,
+                "time_taken": time_taken
+            })
