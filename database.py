@@ -1,6 +1,8 @@
 import os
+import re
+import pandas as pd
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor, execute_values
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -41,20 +43,20 @@ def extract_schema(force_refresh: bool = False):
             rows = cur.fetchall()
             schema_info = {}
             for row in rows:
-                table = row['table_name']
-                column = row['column_name']
-                data_type = row['data_type']
+                table = row["table_name"]
+                column = row["column_name"]
+                data_type = row["data_type"]
                 if table not in schema_info:
                     schema_info[table] = {"columns": [], "sample_rows": []}
                 schema_info[table]["columns"].append(f"{column} ({data_type})")
             for table in schema_info.keys():
-                sample_query = f"SELECT * FROM {table} LIMIT 3;"
+                sample_query = f'SELECT * FROM "{table}" LIMIT 3;'
                 try:
                     cur.execute(sample_query)
                     sample_data = cur.fetchall()
                     schema_info[table]["sample_rows"] = [dict(row) for row in sample_data]
                 except Exception as table_err:
-                    print(f"failed to get sample rows for {table}: {table_err}")
+                    print(f"sample rows error for {table}: {table_err}")
             _SCHEMA_CACHE = schema_info
             return schema_info
     except Exception as e:
@@ -65,7 +67,6 @@ def extract_schema(force_refresh: bool = False):
 
 def execute_safe_query(query: str):
     from validator import sanitize_query
-    # Let ValueError propagate if query is blocked (e.g. non-SELECT or invalid syntax)
     safe_query = sanitize_query(query)
     
     conn = get_db_connection()
@@ -79,18 +80,48 @@ def execute_safe_query(query: str):
     finally:
         conn.close()
 
-if __name__ == "__main__":
-    print("Testing extraction...")
-    schema = extract_schema()
-    if schema:
-        print("Success! Schema:\n")
-        for table_name, data in schema.items():
-            print(f"Table: {table_name}")
-            for col in data["columns"]:
-                print(f"  - {col}")
-            print("  Samples:")
-            for row in data["sample_rows"]:
-                print(f"    {row}")
-            print("-" * 20)
-    else:
-        print("Failed.")
+def import_dataframe_to_db(df: pd.DataFrame, table_name: str) -> int:
+    global _SCHEMA_CACHE
+    clean_table = re.sub(r"[^a-zA-Z0-9_]", "_", table_name.lower().strip())
+    clean_cols = [re.sub(r"[^a-zA-Z0-9_]", "_", c.strip().lower()) for c in df.columns]
+    
+    clean_df = df.copy()
+    clean_df.columns = clean_cols
+
+    col_defs = []
+    for col in clean_cols:
+        col_type_str = str(clean_df[col].dtype).lower()
+        if "int" in col_type_str:
+            sql_type = "BIGINT"
+        elif "float" in col_type_str:
+            sql_type = "NUMERIC"
+        elif "datetime" in col_type_str:
+            sql_type = "TIMESTAMP"
+        elif "bool" in col_type_str:
+            sql_type = "BOOLEAN"
+        else:
+            sql_type = "TEXT"
+        col_defs.append(f'"{col}" {sql_type}')
+
+    conn = get_db_connection()
+    if not conn:
+        raise ConnectionError("Failed to connect to database.")
+        
+    try:
+        cur = conn.cursor()
+        cur.execute(f'DROP TABLE IF EXISTS "{clean_table}" CASCADE;')
+        cur.execute(f'CREATE TABLE "{clean_table}" ({", ".join(col_defs)});')
+        
+        insert_cols = ", ".join([f'"{c}"' for c in clean_cols])
+        insert_sql = f'INSERT INTO "{clean_table}" ({insert_cols}) VALUES %s'
+        
+        prepared_df = clean_df.astype(object).where(pd.notnull(clean_df), None)
+        values = [tuple(x) for x in prepared_df.to_numpy()]
+        
+        execute_values(cur, insert_sql, values, page_size=2000)
+        conn.commit()
+        
+        _SCHEMA_CACHE = None
+        return len(values)
+    finally:
+        conn.close()
