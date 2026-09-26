@@ -36,11 +36,8 @@ function App() {
   const [history, setHistory] = useState([]);
   const [query, setQuery] = useState('');
   const [isQuerying, setIsQuerying] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   
   const chatEndRef = useRef(null);
-  const fileInputRef = useRef(null);
-
   useEffect(() => {
     fetchDbInfo();
   }, []);
@@ -56,28 +53,6 @@ function App() {
       setSchema(res.data.schema);
     } catch (err) {
       console.error("Error fetching DB info:", err);
-    }
-  };
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const tableName = file.name.split('.')[0].replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('table_name', tableName);
-
-    setIsUploading(true);
-    try {
-      await axios.post(`${API_BASE}/import`, formData);
-      await fetchDbInfo();
-    } catch (err) {
-      alert("Error uploading file: " + err.message);
-    } finally {
-      setIsUploading(false);
-      if(fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -211,7 +186,6 @@ function App() {
           </div>
           <div className="widget-actions">
             <button className="action-btn" title="Export CSV" onClick={() => exportCSV(data)}><Download size={16}/></button>
-            <button className="action-btn" title="Share"><Share2 size={16}/></button>
           </div>
         </div>
 
@@ -223,9 +197,6 @@ function App() {
               </button>
               <button className={`w-tab ${activeTab === 'data' ? 'active' : ''}`} onClick={() => setActiveTab('data')}>
                 <Table2 size={16}/> Data ({data.length})
-              </button>
-              <button className={`w-tab ${activeTab === 'sql' ? 'active' : ''}`} onClick={() => setActiveTab('sql')}>
-                <Code2 size={16}/> Query
               </button>
               <div style={{marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center'}}>
                  {time_taken}s execution time
@@ -269,20 +240,6 @@ function App() {
               </div>
             )}
 
-            {activeTab === 'sql' && (
-              <pre style={{ 
-                background: 'rgba(0,0,0,0.5)', 
-                padding: '24px', 
-                borderRadius: '12px', 
-                overflowX: 'auto',
-                color: '#34D399',
-                fontFamily: 'JetBrains Mono',
-                fontSize: '0.85rem',
-                border: '1px solid var(--border-subtle)'
-              }}>
-                {sql}
-              </pre>
-            )}
           </div>
         )}
       </div>
@@ -301,39 +258,10 @@ function App() {
         <aside className="sidebar">
           <div className="brand-header">
             <div className="brand-logo"><Sparkles size={16} /></div>
-            <div className="brand-text">OmniData.ai</div>
+            <div className="brand-text">Vedzzinsights</div>
           </div>
 
           <div className="sidebar-scroll">
-            <div className="nav-section">
-              <div className="nav-label">Workspace</div>
-              <div className="nav-item active"><LayoutDashboard size={16}/> Analytics Canvas</div>
-              <div className="nav-item"><FolderOpen size={16}/> Saved Reports</div>
-              <div className="nav-item"><Activity size={16}/> Activity Log</div>
-            </div>
-
-            <div className="nav-section">
-              <div className="nav-label">Data Sources</div>
-              <div className="premium-dropzone" onClick={() => fileInputRef.current?.click()}>
-                <input 
-                  type="file" 
-                  accept=".csv" 
-                  style={{ display: 'none' }} 
-                  ref={fileInputRef}
-                  onChange={handleFileUpload} 
-                />
-                <div className="drop-icon-wrapper">
-                  {isUploading ? <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} /> : <UploadCloud size={24} />}
-                </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                  {isUploading ? 'Ingesting Data...' : 'Drop CSV here'}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                  Auto-indexes & infers schema
-                </div>
-              </div>
-            </div>
-
             <div className="nav-section">
               <div className="nav-label">Active Database</div>
               {schema ? Object.entries(schema).map(([tableName, meta]) => (
@@ -364,23 +292,7 @@ function App() {
         </aside>
 
         <div className="main-wrapper">
-          <header className="topbar">
-            <div className="breadcrumb">
-              <Database size={16} />
-              <span>PostgreSQL Cluster</span>
-              <span style={{color:'var(--border-subtle)'}}>/</span>
-              <span className="active">Production</span>
-            </div>
-            <div className="topbar-actions">
-              <div className="cmd-hint">
-                <Search size={14} /> Search
-                <span className="cmd-key">⌘K</span>
-              </div>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-pink))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>
-                V
-              </div>
-            </div>
-          </header>
+
 
           <main className="workspace">
             {history.length === 0 ? (
@@ -388,7 +300,7 @@ function App() {
                 <div className="hero-badge">AI Data Analyst</div>
                 <h1 className="hero-title">Ask anything about<br/>your data.</h1>
                 <p className="hero-subtitle">
-                  Connect your databases or upload a CSV. OmniData writes highly optimized SQL, runs the query, and visualizes the results instantly.
+                  Connect your databases. Vedzzinsights writes highly optimized SQL, runs the query, and visualizes the results instantly.
                 </p>
                 
                 <div className="suggestion-grid">
