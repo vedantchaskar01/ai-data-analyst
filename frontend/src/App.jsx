@@ -145,7 +145,6 @@ function App() {
     if (!x_col || !y_col || !data || data.length === 0) return null;
 
     if (chart_type === 'Line' && data.length > 5) {
-      // Use AreaChart for a more premium feel if it's a trend line
       return (
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
@@ -299,7 +298,6 @@ function App() {
       </div>
       
       <div className="layout-container">
-        {/* Sidebar */}
         <aside className="sidebar">
           <div className="brand-header">
             <div className="brand-logo"><Sparkles size={16} /></div>
@@ -365,7 +363,6 @@ function App() {
           </div>
         </aside>
 
-        {/* Main Content */}
         <div className="main-wrapper">
           <header className="topbar">
             <div className="breadcrumb">

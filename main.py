@@ -68,12 +68,10 @@ async def import_csv(file: UploadFile = File(...), table_name: str = Form(...)):
         contents = await file.read()
         df = pd.read_csv(io.BytesIO(contents), encoding="latin1")
         
-        # Format table name to be safe
         safe_table_name = re.sub(r"[^a-zA-Z0-9_]", "_", table_name.lower())
         
         rows_loaded = import_dataframe_to_db(df, safe_table_name)
         
-        # Refresh schema cache by extracting it (it refreshes internal cache in database.py if implemented, else just re-fetches)
         extract_schema(force_refresh=True)
         
         return {"success": True, "message": f"Imported {rows_loaded:,} rows into '{safe_table_name}'", "rows_loaded": rows_loaded, "table_name": safe_table_name}

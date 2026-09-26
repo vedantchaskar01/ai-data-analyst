@@ -40,3 +40,9 @@ ehthumbs.db
 Thumbs.db
 
 implementation_plan.md
+
+# Agent Skills
+.agents/
+
+# Generated Artifacts
+Archify/
