@@ -380,8 +380,11 @@ code { font-family: 'JetBrains Mono', monospace; }
   margin: 0 auto;
   position: relative;
   border-radius: 20px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background: rgba(10, 10, 11, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.5);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -462,8 +465,11 @@ code { font-family: 'JetBrains Mono', monospace; }
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background: rgba(10, 10, 11, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   box-shadow: var(--shadow-md);
   animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);

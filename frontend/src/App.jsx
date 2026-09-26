@@ -36,6 +36,7 @@ function App() {
   const [history, setHistory] = useState([]);
   const [query, setQuery] = useState('');
   const [isQuerying, setIsQuerying] = useState(false);
+  const [activeResult, setActiveResult] = useState(null);
   
   const chatEndRef = useRef(null);
   useEffect(() => {
@@ -68,11 +69,14 @@ function App() {
 
     try {
       const res = await axios.post(`${API_BASE}/query`, { query: currentQuery });
-      setHistory(prev => [...prev, { 
+      const newMsg = { 
         role: 'assistant', 
         result: res.data,
-        question: currentQuery
-      }]);
+        question: currentQuery,
+        id: Date.now()
+      };
+      setHistory(prev => [...prev, newMsg]);
+      setActiveResult(res.data);
     } catch (err) {
       setHistory(prev => [...prev, { 
         role: 'assistant', 
@@ -255,126 +259,123 @@ function App() {
       </div>
       
       <div className="layout-container">
-        <aside className="sidebar">
-          <div className="brand-header">
-            <div className="brand-logo"><Sparkles size={16} /></div>
-            <div className="brand-text">Vedzzinsights</div>
+
+
+        <div className="chat-panel" style={{ width: '400px', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border-subtle)', background: 'rgba(0,0,0,0.2)' }}>
+          <div className="brand-header" style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={18} color="var(--accent-cyan)" />
+            <span style={{ fontSize: '1.2rem', fontWeight: 700, fontFamily: 'Outfit', color: '#fff' }}>Vedzzinsights</span>
           </div>
-
-          <div className="sidebar-scroll">
-            <div className="nav-section">
-              <div className="nav-label">Active Database</div>
-              {schema ? Object.entries(schema).map(([tableName, meta]) => (
-                <div key={tableName} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', fontWeight: 600, color: '#fff', marginBottom: 12 }}>
-                    <Database size={14} color="var(--accent-cyan)" />
-                    {tableName}
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
-                      {dbInfo?.tables?.[tableName] || 0} rows
-                    </span>
+          <main className="workspace" style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
+            {history.map((msg, idx) => (
+              <React.Fragment key={idx}>
+                {msg.role === 'user' ? (
+                  <div className="msg-user" style={{ maxWidth: '100%', marginBottom: '16px', textAlign: 'right' }}>
+                    <div className="msg-user-content" style={{ display: 'inline-block', fontSize: '1rem', padding: '12px 16px', borderRadius: '16px 16px 4px 16px', background: 'var(--accent-blue)' }}>
+                      {msg.content}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {meta.columns.slice(0, 5).map((col, idx) => (
-                      <div key={idx} style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono', paddingLeft: 8, borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
-                        {col}
-                      </div>
-                    ))}
-                    {meta.columns.length > 5 && (
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', paddingLeft: 8 }}>+ {meta.columns.length - 5} more fields</div>
-                    )}
-                  </div>
-                </div>
-              )) : (
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', padding: '0 8px' }}>No connected schemas</div>
-              )}
-            </div>
-          </div>
-        </aside>
-
-        <div className="main-wrapper">
-
-
-          <main className="workspace">
-            {history.length === 0 ? (
-              <div className="hero-state">
-                <div className="hero-badge">AI Data Analyst</div>
-                <h1 className="hero-title">Ask anything about<br/>your data.</h1>
-                <p className="hero-subtitle">
-                  Connect your databases. Vedzzinsights writes highly optimized SQL, runs the query, and visualizes the results instantly.
-                </p>
-                
-                <div className="suggestion-grid">
-                  <div className="suggestion-card" onClick={() => setQuery("What is our monthly revenue trend for this year?")}>
-                    <Activity className="sugg-icon" size={24} />
-                    <div className="sugg-text">Monthly revenue trend</div>
-                  </div>
-                  <div className="suggestion-card" onClick={() => setQuery("Show the top 5 performing categories")}>
-                    <BarChart3 className="sugg-icon" size={24} />
-                    <div className="sugg-text">Top 5 categories</div>
-                  </div>
-                  <div className="suggestion-card" onClick={() => setQuery("How are sales distributed across regions?")}>
-                    <PieChart className="sugg-icon" size={24} />
-                    <div className="sugg-text">Regional distribution</div>
-                  </div>
-                  <div className="suggestion-card" onClick={() => setQuery("List the 10 most recent high-value transactions")}>
-                    <Table2 className="sugg-icon" size={24} />
-                    <div className="sugg-text">Recent high-value rows</div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              history.map((msg, idx) => (
-                <React.Fragment key={idx}>
-                  {msg.role === 'user' ? (
-                    <div className="msg-user">
-                      <div className="msg-user-content">
-                        {msg.content}
+                ) : (
+                  msg.error ? (
+                    <div className="msg-assistant" style={{ maxWidth: '100%', marginBottom: '16px' }}>
+                      <div className="msg-assistant-content" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', padding: '12px 16px', borderRadius: '16px 16px 16px 4px', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#FCA5A5' }}>
+                        <Sparkles size={16} /> Failed: {msg.error}
                       </div>
                     </div>
                   ) : (
-                    msg.error ? (
-                      <div className="widget-card" style={{ borderColor: 'rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.02)' }}>
-                        <div className="widget-body" style={{ color: '#FCA5A5', display: 'flex', alignItems: 'center', gap: 12, fontWeight: 500 }}>
-                          <Sparkles size={24} />
-                          Failed to analyze: {msg.error}
-                        </div>
+                    <div className="msg-assistant" style={{ maxWidth: '100%', marginBottom: '16px', cursor: 'pointer' }} onClick={() => setActiveResult(msg.result)}>
+                      <div className="msg-assistant-content" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', padding: '12px 16px', borderRadius: '16px 16px 16px 4px', background: 'rgba(10, 10, 11, 0.6)', border: '1px solid var(--border-subtle)', backdropFilter: 'blur(12px)', transition: 'all 0.2s', boxShadow: msg.result === activeResult ? '0 0 0 1px var(--accent-cyan)' : 'none' }}>
+                        <Sparkles size={16} color="var(--accent-cyan)" /> 
+                        {msg.result.analysis?.insight ? (msg.result.analysis.insight.length > 30 ? msg.result.analysis.insight.substring(0,30) + '...' : msg.result.analysis.insight) : "Query complete"}
                       </div>
-                    ) : (
-                      <ResultBlock result={msg.result} />
-                    )
-                  )}
-                </React.Fragment>
-              ))
-            )}
+                    </div>
+                  )
+                )}
+              </React.Fragment>
+            ))}
             
             {isQuerying && (
-              <div className="thinking-box">
+              <div className="thinking-box" style={{ fontSize: '0.85rem' }}>
                 <div className="spinner"></div>
-                Generating SQL execution plan and synthesizing insights...
+                Analyzing data...
               </div>
             )}
             <div ref={chatEndRef} />
           </main>
 
-          <div className="input-dock">
-            <form onSubmit={handleQuery} className="input-container">
+          <div className="input-dock" style={{ padding: '20px', position: 'relative', background: 'transparent' }}>
+            <form onSubmit={handleQuery} className="input-container" style={{ borderRadius: '12px', padding: 0 }}>
               <input 
                 type="text"
                 className="magic-input"
-                placeholder="Ask a question..."
+                placeholder="Ask..."
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 disabled={isQuerying}
                 autoFocus
+                style={{ padding: '16px', fontSize: '0.95rem' }}
               />
-              <button type="submit" className="magic-submit" disabled={isQuerying || !query.trim()}>
-                <Send size={18} />
+              <button type="submit" className="magic-submit" disabled={isQuerying || !query.trim()} style={{ width: '36px', height: '36px', right: '8px', bottom: '8px', borderRadius: '10px' }}>
+                <Send size={16} />
               </button>
             </form>
-            <div style={{ textAlign: 'center', marginTop: 12, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-              Powered by Gemini 3.1 Flash. Press Enter to send.
-            </div>
           </div>
+        </div>
+
+        <div className="preview-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px', overflowY: 'auto', position: 'relative' }}>
+          {activeResult ? (
+            <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '40px' }}>
+              <ResultBlock key={activeResult.sql || Date.now()} result={activeResult} />
+              <div style={{ width: '100%' }}>
+                <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '16px', fontFamily: 'Outfit' }}>More questions to try:</h3>
+                <div className="suggestion-grid">
+                  <div className="suggestion-card" onClick={() => setQuery("Show the total revenue trend by date.")}>
+                    <Activity className="sugg-icon" size={24} />
+                    <div className="sugg-text">Analyze revenue trends</div>
+                  </div>
+                  <div className="suggestion-card" onClick={() => setQuery("Compare the total sales across our top 5 performing product categories.")}>
+                    <BarChart3 className="sugg-icon" size={24} />
+                    <div className="sugg-text">Compare product sales</div>
+                  </div>
+                  <div className="suggestion-card" onClick={() => setQuery("What is the percentage breakdown of our total revenue by region?")}>
+                    <LayoutDashboard className="sugg-icon" size={24} />
+                    <div className="sugg-text">View regional breakdown</div>
+                  </div>
+                  <div className="suggestion-card" onClick={() => setQuery("Calculate the total sum of all revenue.")}>
+                    <Sparkles className="sugg-icon" size={24} />
+                    <div className="sugg-text">Calculate total revenue</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="hero-state">
+              <div className="hero-badge">Vedzzinsights</div>
+              <h1 className="hero-title">Turning raw data into<br/>instant clarity.</h1>
+              <p className="hero-subtitle">
+                Stop writing complex SQL. Just chat with your database in plain English and let Vedzzinsights generate accurate, interactive visualizations on the fly.
+              </p>
+              
+              <div className="suggestion-grid">
+                <div className="suggestion-card" onClick={() => setQuery("Show the total revenue trend by date.")}>
+                  <Activity className="sugg-icon" size={24} />
+                  <div className="sugg-text">Analyze revenue trends</div>
+                </div>
+                <div className="suggestion-card" onClick={() => setQuery("Compare the total sales across our top 5 performing product categories.")}>
+                  <BarChart3 className="sugg-icon" size={24} />
+                  <div className="sugg-text">Compare product sales</div>
+                </div>
+                <div className="suggestion-card" onClick={() => setQuery("What is the percentage breakdown of our total revenue by region?")}>
+                  <LayoutDashboard className="sugg-icon" size={24} />
+                  <div className="sugg-text">View regional breakdown</div>
+                </div>
+                <div className="suggestion-card" onClick={() => setQuery("Calculate the total sum of all revenue.")}>
+                  <Sparkles className="sugg-icon" size={24} />
+                  <div className="sugg-text">Calculate total revenue</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
