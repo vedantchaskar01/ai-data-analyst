@@ -13,7 +13,7 @@
 Vedzzinsights completely replaces the need for writing manual SQL queries or clicking through clunky Business Intelligence dashboards. Just ask questions about your data in plain English, and the platform translates it into highly optimized PostgreSQL, executes it safely, and instantly renders the perfect chart (line, bar, pie, or metrics).
 
 ### 🚀 Live Demo
-- **Frontend App:** [Currently Hosted on Vercel](https://vercel.com) *(Insert your `.vercel.app` link here!)*
+- **Frontend App:** [Currently Hosted on Vercel](https://ai-data-analyst-eight-gamma.vercel.app/)
 - **Backend API:** [Hosted on Render](https://ai-data-analyst-do3u.onrender.com)
 - **Database:** PostgreSQL on Supabase
 
