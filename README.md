@@ -56,10 +56,10 @@ npm run dev
 The UI will run on `http://localhost:5173`.
 
 ## Deployment
-If you want to host this yourself:
-- **Backend:** I recommend Render or Railway. Just plug in the repo and set the start command to `uvicorn main:app --host 0.0.0.0 --port $PORT`. Don't forget your environment variables.
-- **Frontend:** Vercel is the easiest. Just change the `API_BASE` in `App.jsx` to point to your new Render URL before pushing.
-- **Database:** Supabase or Neon work great for hosted Postgres.
+This project is currently deployed and live!
+- **Backend:** Hosted on Render (`https://ai-data-analyst-do3u.onrender.com`)
+- **Frontend:** Hosted on Vercel
+- **Database:** PostgreSQL hosted on Supabase
 
 ## License
 MIT
