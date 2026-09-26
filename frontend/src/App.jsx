@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import './index.css';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'https://ai-data-analyst-do3u.onrender.com/api';
 const COLORS = ['#2DD4BF', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981'];
 
 const CustomTooltip = ({ active, payload, label }) => {
