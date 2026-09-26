@@ -1,65 +1,77 @@
-# Vedzzinsights
+<div align="center">
+  <h1>📊 Vedzzinsights</h1>
+  <p><strong>A Natural Language Data Analysis & BI Platform</strong></p>
 
-Vedzzinsights is a natural language data analysis tool. Instead of writing complex SQL queries by hand or clicking through clunky BI dashboards, you can just ask questions in plain English. The app translates your questions into highly optimized PostgreSQL queries, runs them, and instantly generates the right chart (line, bar, pie, or just the raw data).
+  [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](#)
+  [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](#)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](#)
+  [![Gemini](https://img.shields.io/badge/Gemini_3.1-4285F4?style=for-the-badge&logo=google&logoColor=white)](#)
+</div>
 
-I built this with a "split-screen" IDE-style layout. You get your chat/history on the left, and a massive canvas for your charts and data on the right. 
+<br />
 
-## Tech Stack
-* **Frontend:** React + Vite (Custom glassmorphism UI)
-* **Backend:** Python + FastAPI 
-* **Database:** PostgreSQL
-* **AI:** Google Gemini (Flash-Lite model)
+Vedzzinsights completely replaces the need for writing manual SQL queries or clicking through clunky Business Intelligence dashboards. Just ask questions about your data in plain English, and the platform translates it into highly optimized PostgreSQL, executes it safely, and instantly renders the perfect chart (line, bar, pie, or metrics).
 
-## How it works under the hood
-1. The frontend hits the backend to grab your Postgres database schema (tables + columns).
-2. When you ask a question, the backend sends the schema and your question to Gemini.
-3. Gemini writes the raw SQL.
-4. The backend runs the SQL against your Postgres DB safely.
-5. The raw data is analyzed by a heuristic function (or LLM) to decide the best way to visualize it.
-6. The frontend renders the chart using Recharts.
+### 🚀 Live Demo
+- **Frontend App:** [Currently Hosted on Vercel](https://vercel.com) *(Insert your `.vercel.app` link here!)*
+- **Backend API:** [Hosted on Render](https://ai-data-analyst-do3u.onrender.com)
+- **Database:** PostgreSQL on Supabase
 
-## Local Setup
+---
+
+## ✨ Features
+
+- **Split-Screen Workspace:** An IDE-style layout with chat history on the left and a massive dynamic canvas for data visualization on the right.
+- **Dynamic Visualization:** Automatically detects the shape of your data and chooses the best Recharts component (Bar, Line, Pie, or raw data tables).
+- **Glassmorphism UI:** A custom, premium dark-mode interface built from scratch without bulky CSS frameworks.
+- **LLM-Powered SQL Generation:** Uses Google's Gemini Flash-Lite model to generate complex queries based on your exact database schema.
+- **CSV Data Ingestion:** Drag and drop CSV files directly into the UI to instantly create tables and populate data in PostgreSQL.
+
+## 🛠️ Architecture / How it Works
+
+1. **Schema Extraction:** The React frontend hits the FastAPI backend to map your Postgres database schema (tables + columns).
+2. **Natural Language Processing:** When a question is asked, the backend bundles the schema context + user prompt and sends it to the Gemini API.
+3. **Execution:** Gemini returns raw SQL, which the backend safely executes against the PostgreSQL database.
+4. **Heuristic Analysis:** The resulting raw data is analyzed by a custom heuristic function to determine the optimal X/Y axes and chart type.
+5. **Rendering:** The frontend receives the structured payload and mounts the appropriate `recharts` component.
+
+---
+
+## 💻 Local Development
 
 ### 1. Backend (Python)
-You need Python 3.9+ installed.
+Requires Python 3.9+
 
 ```bash
-# setup venv
+# Set up virtual environment
 python -m venv .venv
-source .venv/bin/activate  # on windows: .venv\Scripts\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# create a .env file in the root directory
-# add your keys:
-# GEMINI_API_KEY=your_key_here
+# Environment Variables (.env)
+# GEMINI_API_KEY=your_key
 # DB_HOST=localhost
 # DB_PORT=5432
 # DB_USER=postgres
-# DB_PASSWORD=your_password
+# DB_PASSWORD=password
 # DB_NAME=your_db
 
-# run the server
+# Run the API
 python main.py
 ```
-The API will run on `http://localhost:8000`.
+*API runs on `http://localhost:8000`*
 
 ### 2. Frontend (React)
-Make sure you have Node.js installed.
+Requires Node.js 18+
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-The UI will run on `http://localhost:5173`.
+*UI runs on `http://localhost:5173`*
 
-## Deployment
-This project is currently deployed and live!
-- **Backend:** Hosted on Render (`https://ai-data-analyst-do3u.onrender.com`)
-- **Frontend:** Hosted on Vercel
-- **Database:** PostgreSQL hosted on Supabase
-
-## License
-MIT
+## 📜 License
+MIT License - do whatever you want with it!
